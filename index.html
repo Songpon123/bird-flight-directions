@@ -2560,11 +2560,25 @@ const idHelp = { region: 'CT', shape: null };
    ไม่มีไฟล์ก็แสดงแค่ชื่อกลุ่ม */
 const SILHOUETTE_TYPES = ['png', 'jpg', 'webp', 'svg'];
 const silhouetteSrc = new Map();
+let silhouetteFiles = null;   /* ชื่อไฟล์จาก silhouettes/index.json (สร้างโดย build script) null = ไม่รู้ ลองโหลดทีละนามสกุล */
+
+function loadSilhouetteIndex() {
+  if (!window.fetch) return;
+  fetch('silhouettes/index.json', { cache: 'no-cache' })
+    .then(response => (response.ok ? response.json() : null))
+    .then(list => { if (Array.isArray(list)) silhouetteFiles = new Set(list.map(String)); })
+    .catch(() => { /* เปิดจากไฟล์ในเครื่อง: ลองโหลดภาพตรง ๆ */ });
+}
 
 function silhouetteImg(id, className) {
-  const known = silhouetteSrc.get(id);
-  if (known === '') return '';
-  return `<img class="${className}" src="${known || `silhouettes/${id}.${SILHOUETTE_TYPES[0]}`}" data-silhouette="${id}" data-try="0" alt="">`;
+  let src = silhouetteSrc.get(id);
+  if (src === '') return '';
+  if (!src && silhouetteFiles) {
+    const file = SILHOUETTE_TYPES.map(ext => `${id}.${ext}`).find(name => silhouetteFiles.has(name));
+    if (!file) return '';
+    src = `silhouettes/${file}`;
+  }
+  return `<img class="${className}" src="${src || `silhouettes/${id}.${SILHOUETTE_TYPES[0]}`}" data-silhouette="${id}" data-try="0" alt="">`;
 }
 
 function onSilhouetteError(event) {
@@ -2635,6 +2649,7 @@ function openIdHelp() {
 }
 
 function setupIdHelp() {
+  loadSilhouetteIndex();
   $('#id-help').addEventListener('click', openIdHelp);
   /* error/load ไม่ bubble จึงจับที่ capture phase */
   $('#id-dialog').addEventListener('error', onSilhouetteError, true);
