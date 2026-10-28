@@ -171,9 +171,12 @@ tr.total td { font-weight: 700; }
 code { font-size: 12px; background: var(--surface-2); padding: 1px 4px; border-radius: 4px; }
 .label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .label-row button { min-height: 28px; padding: 0; font-size: 13px; }
-#id-dialog { width: min(96vw, 760px); max-height: 92vh; padding: 0; }
-#id-dialog .id-head { position: sticky; top: 0; z-index: 1; display: grid; gap: 8px; padding: 14px 16px 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
-#id-dialog .id-body { padding: 4px 16px 18px; }
+/* iPhone: vh นับรวมแถบเบราว์เซอร์ หน้าต่างจึงล้นจอและปุ่ม Close หาย ใช้ dvh และให้เลื่อนเฉพาะเนื้อหา หัวค้างอยู่เสมอ */
+#id-dialog { width: min(96vw, 760px); max-height: 90vh; max-height: calc(100dvh - 24px); padding: 0; overflow: hidden; }
+#id-dialog[open] { display: flex; flex-direction: column; }
+#id-dialog .id-head { flex: none; display: grid; gap: 8px; padding: 14px 16px 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
+#id-dialog .id-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 4px 16px 18px; }
+#id-close { min-height: 40px; padding: 0 12px; font-weight: 600; }
 .id-section { margin: 14px 0 8px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
 .shape-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .shape-card { display: grid; gap: 2px; padding: 8px 10px 10px; text-align: left; border-radius: 12px; }
@@ -2658,12 +2661,14 @@ function setupIdHelp() {
     if (img && img.dataset && img.dataset.silhouette) silhouetteSrc.set(img.dataset.silhouette, img.getAttribute('src'));
   }, true);
   $('#id-close').addEventListener('click', () => $('#id-dialog').close());
+  /* แตะพื้นที่มืดนอกหน้าต่างเพื่อปิดได้ด้วย */
+  $('#id-dialog').addEventListener('click', event => { if (event.target === $('#id-dialog')) $('#id-dialog').close(); });
   for (const button of document.querySelectorAll('[data-region]')) {
     button.addEventListener('click', () => { idHelp.region = button.dataset.region; renderIdHelp(); });
   }
   $('#id-body').addEventListener('click', event => {
     const card = event.target.closest('[data-shape]'), pick = event.target.closest('[data-pick]');
-    if (card) { idHelp.shape = card.dataset.shape; renderIdHelp(); $('#id-dialog').scrollTop = 0; }
+    if (card) { idHelp.shape = card.dataset.shape; renderIdHelp(); $('#id-body').scrollTop = 0; }
     else if (event.target.closest('[data-back]')) { idHelp.shape = null; renderIdHelp(); }
     else if (pick) {
       $('#species').value = pick.dataset.pick;
